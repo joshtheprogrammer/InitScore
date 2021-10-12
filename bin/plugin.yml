@@ -1,0 +1,17 @@
+name: InitScore
+version: 1.0
+description: Scoreboard
+author: uziza
+
+main: user.uziza.initscore.InitScore
+
+commands:
+  initiative:
+    aliases: [int, init]
+    description: Shows a dice roll on a scoreboard.
+    usage: "
+       /initiative create - puts up the scoreboard and allows rolls (Only useable by creative players)
+       /initiative add [] (player) - rolls 1d20+[mod], adds to scoreboard as [Name] [Score]
+       /initative delete (player) - removes player from scoreboard
+       /initiative clear - wipes all scores from the scoreboard
+    "
