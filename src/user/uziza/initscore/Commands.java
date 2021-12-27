@@ -27,10 +27,6 @@ import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 
-import com.sun.corba.se.impl.oa.poa.ActiveObjectMap.Key;
-
-import sun.security.krb5.Config;
-
 public class Commands implements CommandExecutor, Listener {
 
 	List<String> CMDS = new ArrayList<String>(Arrays.asList("int", "init", "initiative"));
@@ -51,23 +47,48 @@ public class Commands implements CommandExecutor, Listener {
 		objective = scoreboard.registerNewObjective("RTD", "");
 
 		if (plugin.getConfig().getKeys(false).size() > 0) {
-			String turn = plugin.getConfig().get("Turn").toString();
-			String[] filter = plugin.getConfig().get("Filter").toString().split(", ");
-			for (String f : filter) {
-				init_score_filter.add(f);
+			
+			
+			if (plugin.getConfig().get("Filter") != null) {
+				String[] filter = plugin.getConfig().get("Filter").toString().split(", ");
+				for (String f : filter) {
+					init_score_filter.add(f);
+				}
 			}
 			objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-			objective.setDisplayName("Initiative");
-			for (String key : plugin.getConfig().getConfigurationSection("People").getKeys(false)) {
-				String name = "[ ] " + key;
-				if (key.contentEquals(turn)) {
-					name = "[X] " + key;
-					init_score_turn.add(name.replace("[X] ", ""));
+			if (plugin.getConfig().get("Title") != null) {
+				String title = plugin.getConfig().get("Title").toString();
+				objective.setDisplayName("Initiative " + "(" + title + ")");
+			}
+			else {
+				objective.setDisplayName("Initiative");
+			}
+			
+			if (plugin.getConfig().getConfigurationSection("People") != null) {
+				String turn;
+				if (plugin.getConfig().get("Turn") != null) {
+					turn = plugin.getConfig().get("Turn").toString();
 				}
-				Score score = objective.getScore(name);
-				score.setScore(plugin.getConfig().getInt("People." + key)); // score
-
-				init_score.put(key, score);
+				else {
+					turn = plugin.getConfig().getConfigurationSection("People").getKeys(false).iterator().next();
+					plugin.getConfig().set("Turn", turn);
+					plugin.saveConfig();
+				}
+				for (String key : plugin.getConfig().getConfigurationSection("People").getKeys(false)) {
+					String name = "[ ] " + key;
+					if (key.contentEquals(turn)) {
+						name = "[X] " + key;
+						init_score_turn.add(name.replace("[X] ", ""));
+					}
+					Score score = objective.getScore(name);
+					score.setScore(plugin.getConfig().getInt("People." + key)); // score
+	
+					init_score.put(key, score);
+				}
+			}
+			else {
+				Score score = objective.getScore("None");
+				score.setScore(-1);
 			}
 
 			init_scoreboard.add(scoreboard);
@@ -269,7 +290,21 @@ public class Commands implements CommandExecutor, Listener {
 						}
 					}
 				} else if (args.length == 2) {
-					if (args[0].matches("delete")) {
+					if (args[0].matches("set")) {
+						if (Integer.valueOf(args[1]) != null && Integer.valueOf(args[1]) > 0) {
+							if (init_scoreboard.contains(scoreboard)) {
+								objective.setDisplayName("Initiative " + "(" +args[1] + ")");
+								plugin.getConfig().set("Title", Integer.valueOf(args[1]));
+							}
+							else {
+								player.sendMessage("No scoreboard");
+							}
+						}
+						else {
+							player.sendMessage("Not a valid Number");
+						}
+					}
+					else if (args[0].matches("delete")) {
 						if (player.getGameMode() == GameMode.CREATIVE) {
 							if (init_scoreboard.contains(scoreboard)) {
 								if (init_score.containsKey(args[1])) {
@@ -416,7 +451,7 @@ public class Commands implements CommandExecutor, Listener {
 
 				} else if (args.length == 3) {
 					if (args[0].matches("add")) {
-						if (player.getGameMode() == GameMode.CREATIVE) {
+						if (args[2].toLowerCase().matches(player.getName().toLowerCase())||player.getGameMode() == GameMode.CREATIVE) {
 							if (init_scoreboard.contains(scoreboard)) {
 								try {
 									String RTD = args[1];
@@ -514,7 +549,7 @@ public class Commands implements CommandExecutor, Listener {
 								player.sendMessage("No scoreboard");
 							}
 						} else {
-							player.sendMessage("Not in creative mode");
+							player.sendMessage("Not valid/in creative");
 						}
 					}
 				}
