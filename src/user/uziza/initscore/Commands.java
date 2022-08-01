@@ -113,7 +113,7 @@ public class Commands implements CommandExecutor, Listener {
 				Player player = (Player) sender;
 				if (args.length == 1) {
 					if (args[0].matches("create")) {
-						if (player.getGameMode() == GameMode.CREATIVE) {
+						if (player.getGameMode() == GameMode.CREATIVE || player.isOp()) {
 							if (!init_scoreboard.contains(scoreboard)) {
 
 								objective.setDisplaySlot(DisplaySlot.SIDEBAR);
@@ -162,7 +162,7 @@ public class Commands implements CommandExecutor, Listener {
 							player.sendMessage("No scoreboard");
 						}
 					} else if (args[0].matches("clear")) {
-						if (player.getGameMode() == GameMode.CREATIVE) {
+						if (player.getGameMode() == GameMode.CREATIVE || player.isOp()) {
 							init_score_turn.clear();
 							if (init_scoreboard.contains(scoreboard)) {
 								for (String players : init_score.keySet()) {
@@ -174,6 +174,7 @@ public class Commands implements CommandExecutor, Listener {
 								init_scoreboard.remove(scoreboard);
 								plugin.getConfig().set("Turn", null);
 								plugin.getConfig().set("People", null);
+								plugin.getConfig().set("Title", null);
 							} else {
 								player.sendMessage("No scoreboard");
 							}
@@ -181,7 +182,7 @@ public class Commands implements CommandExecutor, Listener {
 							player.sendMessage("Not in creative mode");
 						}
 					} else if (args[0].matches("next")) {
-						if (player.getGameMode() == GameMode.CREATIVE) {
+						if (player.getGameMode() == GameMode.CREATIVE || player.isOp()) {
 							if (init_score.size() > 1) {
 								int pre_score = -1;
 								String old_person = null;
@@ -245,7 +246,7 @@ public class Commands implements CommandExecutor, Listener {
 							player.sendMessage("Not in creative mode");
 						}
 					} else if (args[0].matches("delete")) {
-						if (player.getGameMode() == GameMode.CREATIVE) {
+						if (player.getGameMode() == GameMode.CREATIVE || player.isOp()) {
 							if (init_scoreboard.contains(scoreboard)) {
 								if (init_score.containsKey(player.getName())) {
 									init_score.remove(player.getName());
@@ -291,6 +292,37 @@ public class Commands implements CommandExecutor, Listener {
 					}
 				} else if (args.length == 2) {
 					if (args[0].matches("set")) {
+						if (init_scoreboard.contains(scoreboard)) {
+							try {
+								String name = "[ ] " + player.getName();
+								if (scoreboard.getObjective("RTD").getScore("None").getScore() == -1) {
+									scoreboard.resetScores("None");
+									init_score_filter.clear();
+									if (init_score_turn.isEmpty()) {
+										init_score_turn.add(player.getName());
+										name = "[X] " + player.getName();
+									}
+								}
+								if (init_score_turn.contains(player.getName())) {
+									name = "[X] " + player.getName();
+								}
+								Score score = objective.getScore(name);
+								score.setScore(Integer.valueOf(args[1])); // score
+								init_score.put(player.getName(), score);
+
+								for (Entry<String, Score> entry : init_score.entrySet()) {
+									String key = entry.getKey();
+									Integer value = entry.getValue().getScore();
+
+									plugin.getConfig().set("People." + key, value);
+								}
+							}
+							catch (Exception e) {
+								
+							}
+						}
+					}
+					else if (args[0].matches("setto")) {
 						if (Integer.valueOf(args[1]) != null && Integer.valueOf(args[1]) > 0) {
 							if (init_scoreboard.contains(scoreboard)) {
 								objective.setDisplayName("Initiative " + "(" +args[1] + ")");
@@ -305,7 +337,7 @@ public class Commands implements CommandExecutor, Listener {
 						}
 					}
 					else if (args[0].matches("delete")) {
-						if (player.getGameMode() == GameMode.CREATIVE) {
+						if (player.getGameMode() == GameMode.CREATIVE || player.isOp()) {
 							if (init_scoreboard.contains(scoreboard)) {
 								if (init_score.containsKey(args[1])) {
 									init_score.remove(args[1]);
@@ -450,8 +482,41 @@ public class Commands implements CommandExecutor, Listener {
 					}
 
 				} else if (args.length == 3) {
-					if (args[0].matches("add")) {
-						if (args[2].toLowerCase().matches(player.getName().toLowerCase())||player.getGameMode() == GameMode.CREATIVE) {
+					if (args[0].matches("set")) {
+						if (args[2].toLowerCase().matches(player.getName().toLowerCase())||player.getGameMode() == GameMode.CREATIVE||player.isOp()) {
+							if (init_scoreboard.contains(scoreboard)) {
+								try {
+									String name = "[ ] " + args[2];
+									if (scoreboard.getObjective("RTD").getScore("None").getScore() == -1) {
+										scoreboard.resetScores("None");
+										init_score_filter.clear();
+										if (init_score_turn.isEmpty()) {
+											init_score_turn.add(args[2]);
+											name = "[X] " + args[2];
+										}
+									}
+									if (init_score_turn.contains(args[2])) {
+										name = "[X] " + args[2];
+									}
+									Score score = objective.getScore(name);
+									score.setScore(Integer.valueOf(args[1])); // score
+									init_score.put(args[2], score);
+
+									for (Entry<String, Score> entry : init_score.entrySet()) {
+										String key = entry.getKey();
+										Integer value = entry.getValue().getScore();
+
+										plugin.getConfig().set("People." + key, value);
+									}
+								}
+								catch (Exception e) {
+									
+								}
+							}
+						}
+					}
+					else if (args[0].matches("add")) {
+						if (args[2].toLowerCase().matches(player.getName().toLowerCase())||player.getGameMode() == GameMode.CREATIVE||player.isOp()) {
 							if (init_scoreboard.contains(scoreboard)) {
 								try {
 									String RTD = args[1];
